@@ -65,6 +65,25 @@
             font-size: 18px;
             cursor: pointer;
         }
+        /* スマホ用コントロールボタン */
+        #controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        #controls button {
+            margin: 5px;
+            padding: 15px 25px;
+            font-size: 24px;
+            border: none;
+            border-radius: 8px;
+            background-color: #ffd966;
+            color: #333;
+            cursor: pointer;
+        }
+        #controls button:active {
+            background-color: #f1c232;
+        }
     </style>
 </head>
 <body>
@@ -79,6 +98,12 @@
         </div>
     </div>
 
+    <!-- スマホ用コントロールボタン -->
+    <div id="controls">
+        <button id="leftButton">⬅️</button>
+        <button id="rightButton">➡️</button>
+    </div>
+
     <script>
         const basket = document.getElementById('basket');
         const gameArea = document.getElementById('gameArea');
@@ -87,6 +112,8 @@
         const clearMessage = document.getElementById('clearMessage');
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartButton = document.getElementById('restartButton');
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
 
         let score = 0;
         let isGameOver = false;
@@ -96,7 +123,6 @@
         let timerInterval;
 
         function startGame() {
-            // 初期化
             score = 0;
             timeLeft = 30;
             dropSpeed = 5;
@@ -105,27 +131,20 @@
             timerDisplay.textContent = `⏳ ${timeLeft}`;
             clearMessage.style.display = 'none';
             basket.style.left = '50%';
-
-            // スタート
             appleDropInterval = setInterval(dropApple, 1500);
             timerInterval = setInterval(updateTimer, 1000);
         }
 
-        // タイマー処理
         function updateTimer() {
             timeLeft--;
             timerDisplay.textContent = `⏳ ${timeLeft}`;
-
-            // 10秒ごとにスピードUP
             if (timeLeft === 20) dropSpeed = 7;
             if (timeLeft === 10) dropSpeed = 10;
-
             if (timeLeft <= 0) {
                 gameOver();
             }
         }
 
-        // ゲームオーバー処理
         function gameOver() {
             isGameOver = true;
             clearInterval(appleDropInterval);
@@ -134,7 +153,6 @@
             clearMessage.style.display = 'block';
         }
 
-        // リーリー左右移動
         document.addEventListener('keydown', (e) => {
             if (isGameOver) return;
             const left = parseInt(window.getComputedStyle(basket).left);
@@ -145,7 +163,22 @@
             }
         });
 
-        // りんごを落とす
+        leftButton.addEventListener('click', () => {
+            if (isGameOver) return;
+            const left = parseInt(window.getComputedStyle(basket).left);
+            if (left > 0) {
+                basket.style.left = (left - 20) + 'px';
+            }
+        });
+
+        rightButton.addEventListener('click', () => {
+            if (isGameOver) return;
+            const left = parseInt(window.getComputedStyle(basket).left);
+            if (left < (gameArea.offsetWidth - basket.offsetWidth)) {
+                basket.style.left = (left + 20) + 'px';
+            }
+        });
+
         function dropApple() {
             if (isGameOver) return;
             const apple = document.createElement('div');
@@ -167,7 +200,6 @@
                 const basketRect = basket.getBoundingClientRect();
                 const appleRect = apple.getBoundingClientRect();
 
-                // キャッチ判定
                 if (
                     appleRect.bottom >= basketRect.top &&
                     appleRect.left < basketRect.right &&
@@ -179,7 +211,6 @@
                     scoreDisplay.textContent = `🍎 ${score}`;
                 }
 
-                // 地面に落としたら -1
                 if (appleTop > gameArea.offsetHeight) {
                     clearInterval(fall);
                     apple.remove();
@@ -189,10 +220,8 @@
             }, 20);
         }
 
-        // Restartボタン
         restartButton.addEventListener('click', startGame);
 
-        // 最初のゲーム開始
         startGame();
     </script>
 </body>
