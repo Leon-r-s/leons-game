@@ -18,6 +18,7 @@
             background: url('background.png') no-repeat center/cover;
             border: 4px solid #555;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            touch-action: none; /* タッチ動作を許可 */
         }
         #basket {
             position: absolute;
@@ -65,25 +66,6 @@
             font-size: 18px;
             cursor: pointer;
         }
-        /* スマホ用コントロールボタン */
-        #controls {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        #controls button {
-            margin: 5px;
-            padding: 15px 25px;
-            font-size: 24px;
-            border: none;
-            border-radius: 8px;
-            background-color: #ffd966;
-            color: #333;
-            cursor: pointer;
-        }
-        #controls button:active {
-            background-color: #f1c232;
-        }
     </style>
 </head>
 <body>
@@ -97,13 +79,6 @@
             <button id="restartButton">もう1回あそぶ</button>
         </div>
     </div>
-
-    <!-- スマホ用コントロールボタン -->
-    <div id="controls">
-        <button id="leftButton">⬅️</button>
-        <button id="rightButton">➡️</button>
-    </div>
-
     <script>
         const basket = document.getElementById('basket');
         const gameArea = document.getElementById('gameArea');
@@ -112,8 +87,6 @@
         const clearMessage = document.getElementById('clearMessage');
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartButton = document.getElementById('restartButton');
-        const leftButton = document.getElementById('leftButton');
-        const rightButton = document.getElementById('rightButton');
 
         let score = 0;
         let isGameOver = false;
@@ -121,6 +94,8 @@
         let dropSpeed = 5;
         let appleDropInterval;
         let timerInterval;
+
+        let moveInterval = null; // ← スマホ連続移動用
 
         function startGame() {
             score = 0;
@@ -153,6 +128,7 @@
             clearMessage.style.display = 'block';
         }
 
+        // PC用キーボード操作
         document.addEventListener('keydown', (e) => {
             if (isGameOver) return;
             const left = parseInt(window.getComputedStyle(basket).left);
@@ -163,20 +139,27 @@
             }
         });
 
-        leftButton.addEventListener('click', () => {
+        // スマホタップ連続移動
+        gameArea.addEventListener('touchstart', (e) => {
             if (isGameOver) return;
-            const left = parseInt(window.getComputedStyle(basket).left);
-            if (left > 0) {
-                basket.style.left = (left - 20) + 'px';
-            }
+            const touchX = e.touches[0].clientX;
+            const gameAreaRect = gameArea.getBoundingClientRect();
+            const middleX = gameAreaRect.left + gameAreaRect.width / 2;
+
+            const direction = (touchX < middleX) ? -1 : 1;
+
+            moveInterval = setInterval(() => {
+                const left = parseInt(window.getComputedStyle(basket).left);
+                if (direction === -1 && left > 0) {
+                    basket.style.left = (left - 10) + 'px';
+                } else if (direction === 1 && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+                    basket.style.left = (left + 10) + 'px';
+                }
+            }, 20);
         });
 
-        rightButton.addEventListener('click', () => {
-            if (isGameOver) return;
-            const left = parseInt(window.getComputedStyle(basket).left);
-            if (left < (gameArea.offsetWidth - basket.offsetWidth)) {
-                basket.style.left = (left + 20) + 'px';
-            }
+        gameArea.addEventListener('touchend', () => {
+            clearInterval(moveInterval);
         });
 
         function dropApple() {
