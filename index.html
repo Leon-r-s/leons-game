@@ -28,7 +28,6 @@
             transform: translate(-50%, -50%);
             width: 400px;
             height: auto;
-            z-index: 1; 
         }
         #startButton {
             position: absolute;
@@ -41,7 +40,9 @@
             background-color: #ffcccc;
             border: 2px solid #cc6666;
             border-radius: 8px;
-            z-index: 2;
+        }
+        #startButton:active {
+            background-color: #ffaaaa;
         }
         #basket {
             position: absolute;
@@ -102,7 +103,7 @@
 <body>
     <div id="gameArea">
         <img id="titleScreen" src="title.png" alt="タイトル">
-        <button id="startButton">スタート！</button>
+        <button id="startButton" ontouchstart="this.click()">スタート！</button>
         <div id="basket" style="display:none;"></div>
         <div id="score" style="display:none;">🍎 0</div>
         <div id="timer" style="display:none;">⏳ 30</div>
@@ -113,171 +114,169 @@
         </div>
     </div>
     <script>
-        const basket = document.getElementById('basket');
-        const gameArea = document.getElementById('gameArea');
-        const scoreDisplay = document.getElementById('score');
-        const timerDisplay = document.getElementById('timer');
-        const titleScreen = document.getElementById('titleScreen');
-        const startButton = document.getElementById('startButton');
-        const clearMessage = document.getElementById('clearMessage');
-        const finalScoreDisplay = document.getElementById('finalScore');
-        const restartButton = document.getElementById('restartButton');
-    
-        let score = 0;
-        let timeLeft = 30;
-        let dropSpeed = 5;
-        let isGameOver = false;
-        let appleDropInterval;
-        let timerInterval;
-        let moveInterval = null;
-    
-        startButton.addEventListener('click', () => {
-            titleScreen.style.display = 'none';
-            startButton.style.display = 'none';
-            basket.style.display = 'block';
-            scoreDisplay.style.display = 'block';
-            timerDisplay.style.display = 'block';
-            startGame();
-        });
-    
-        restartButton.addEventListener('click', () => {
-            clearMessage.style.display = 'none';
-            basket.style.display = 'block';
-            scoreDisplay.style.display = 'block';
-            timerDisplay.style.display = 'block';
-            startGame();
-        });
-    
-        function startGame() {
-            score = 0;
-            timeLeft = 30;
-            dropSpeed = 5;
-            isGameOver = false;
-            basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
-            scoreDisplay.textContent = `🍎 ${score}`;
-            timerDisplay.textContent = `⏳ ${timeLeft}`;
-            clearMessage.style.display = 'none';
-            clearInterval(appleDropInterval);
-            clearInterval(timerInterval);
-            appleDropInterval = setInterval(dropApple, 1000);
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-    
-        function updateTimer() {
-            timeLeft--;
-            timerDisplay.textContent = `⏳ ${timeLeft}`;
-            if (timeLeft === 20) dropSpeed = 7;
-            if (timeLeft === 10) dropSpeed = 10;
-            if (timeLeft <= 0) {
-                gameOver();
-            }
-        }
-    
-        function gameOver() {
-            isGameOver = true;
-            clearInterval(appleDropInterval);
-            clearInterval(timerInterval);
-            finalScoreDisplay.textContent = score;
-            clearMessage.style.display = 'block';
-            basket.style.display = 'none';
-            scoreDisplay.style.display = 'none';
-            timerDisplay.style.display = 'none';
-        }
-    
-        function dropApple() {
-            if (isGameOver) return;
-    
-            const dropCount = Math.floor(Math.random() * 3) + 1;
-            for (let i = 0; i < dropCount; i++) {
-                const apple = document.createElement('div');
-                apple.className = 'apple';
-    
-                const typeRand = Math.random();
-                if (typeRand < 0.7) {
-                    apple.classList.add('normalApple');
-                    apple.dataset.value = 1;
-                    apple.dataset.speed = dropSpeed;
-                } else if (typeRand < 0.9) {
-                    apple.classList.add('purpleApple');
-                    apple.dataset.value = -5;
-                    apple.dataset.speed = dropSpeed;
-                } else {
-                    apple.classList.add('goldApple');
-                    apple.dataset.value = 10;
-                    apple.dataset.speed = dropSpeed + 3;
-                }
-    
-                apple.style.left = Math.random() * (gameArea.offsetWidth - 40) + 'px';
-                gameArea.appendChild(apple);
-    
-                let appleTop = 0;
-                const fall = setInterval(() => {
-                    if (isGameOver) {
-                        clearInterval(fall);
-                        apple.remove();
-                        return;
-                    }
-    
-                    appleTop += parseFloat(apple.dataset.speed);
-                    apple.style.top = appleTop + 'px';
-    
-                    const basketRect = basket.getBoundingClientRect();
-                    const appleRect = apple.getBoundingClientRect();
-    
-                    if (
-                        appleRect.bottom >= basketRect.top &&
-                        appleRect.left < basketRect.right &&
-                        appleRect.right > basketRect.left
-                    ) {
-                        clearInterval(fall);
-                        apple.remove();
-                        score += parseInt(apple.dataset.value);
-                        if (score < 0) score = 0;
-                        scoreDisplay.textContent = `🍎 ${score}`;
-                    }
-    
-                    if (appleTop > gameArea.offsetHeight) {
-                        clearInterval(fall);
-                        apple.remove();
-                        // 落ちた時は減点しない（ここを修正した）
-                    }
-                }, 20);
-            }
-        }
-    
-        document.addEventListener('keydown', (e) => {
-            if (isGameOver) return;
-            const left = parseInt(window.getComputedStyle(basket).left);
-            if (e.key === 'ArrowLeft' && left > 0) {
-                basket.style.left = Math.max(0, left - 20) + 'px';
-            } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-                basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 20) + 'px';
-            }
-        });
-    
-        gameArea.addEventListener('touchstart', (e) => {
-            if (isGameOver) return;
-            e.preventDefault();
-    
-            const touchX = e.touches[0].clientX;
-            const gameAreaRect = gameArea.getBoundingClientRect();
-            const middleX = gameAreaRect.left + gameAreaRect.width / 2;
-            const direction = (touchX < middleX) ? -1 : 1;
-    
-            moveInterval = setInterval(() => {
-                const left = parseInt(window.getComputedStyle(basket).left);
-                if (direction === -1 && left > 0) {
-                    basket.style.left = Math.max(0, left - 10) + 'px';
-                } else if (direction === 1 && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-                    basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 10) + 'px';
-                }
-            }, 20);
-        });
-    
-        gameArea.addEventListener('touchend', () => {
-            clearInterval(moveInterval);
-        });
-    </script>
-    </body>
-    </html>
-    
+      const basket = document.getElementById('basket');
+      const gameArea = document.getElementById('gameArea');
+      const scoreDisplay = document.getElementById('score');
+      const timerDisplay = document.getElementById('timer');
+      const titleScreen = document.getElementById('titleScreen');
+      const startButton = document.getElementById('startButton');
+      const clearMessage = document.getElementById('clearMessage');
+      const finalScoreDisplay = document.getElementById('finalScore');
+      const restartButton = document.getElementById('restartButton');
+
+      let score = 0;
+      let timeLeft = 30;
+      let dropSpeed = 5;
+      let isGameOver = false;
+      let appleDropInterval;
+      let timerInterval;
+      let moveInterval = null;
+
+      startButton.addEventListener('click', () => {
+          titleScreen.style.display = 'none';
+          startButton.style.display = 'none';
+          basket.style.display = 'block';
+          scoreDisplay.style.display = 'block';
+          timerDisplay.style.display = 'block';
+          startGame();
+      });
+
+      restartButton.addEventListener('click', () => {
+          clearMessage.style.display = 'none';
+          basket.style.display = 'block';
+          scoreDisplay.style.display = 'block';
+          timerDisplay.style.display = 'block';
+          startGame();
+      });
+
+      function startGame() {
+          score = 0;
+          timeLeft = 30;
+          dropSpeed = 5;
+          isGameOver = false;
+          basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
+          scoreDisplay.textContent = `🍎 ${score}`;
+          timerDisplay.textContent = `⏳ ${timeLeft}`;
+          clearMessage.style.display = 'none';
+          clearInterval(appleDropInterval);
+          clearInterval(timerInterval);
+          appleDropInterval = setInterval(dropApple, 1000);
+          timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function updateTimer() {
+          timeLeft--;
+          timerDisplay.textContent = `⏳ ${timeLeft}`;
+          if (timeLeft === 20) dropSpeed = 7;
+          if (timeLeft === 10) dropSpeed = 10;
+          if (timeLeft <= 0) {
+              gameOver();
+          }
+      }
+
+      function gameOver() {
+          isGameOver = true;
+          clearInterval(appleDropInterval);
+          clearInterval(timerInterval);
+          finalScoreDisplay.textContent = score;
+          clearMessage.style.display = 'block';
+          basket.style.display = 'none';
+          scoreDisplay.style.display = 'none';
+          timerDisplay.style.display = 'none';
+      }
+
+      function dropApple() {
+          if (isGameOver) return;
+
+          const dropCount = Math.floor(Math.random() * 3) + 1;
+          for (let i = 0; i < dropCount; i++) {
+              const apple = document.createElement('div');
+              apple.className = 'apple';
+
+              const typeRand = Math.random();
+              if (typeRand < 0.7) {
+                  apple.classList.add('normalApple');
+                  apple.dataset.value = 1;
+                  apple.dataset.speed = dropSpeed;
+              } else if (typeRand < 0.9) {
+                  apple.classList.add('purpleApple');
+                  apple.dataset.value = -5;
+                  apple.dataset.speed = dropSpeed;
+              } else {
+                  apple.classList.add('goldApple');
+                  apple.dataset.value = 10;
+                  apple.dataset.speed = dropSpeed + 3;
+              }
+
+              apple.style.left = Math.random() * (gameArea.offsetWidth - 40) + 'px';
+              gameArea.appendChild(apple);
+
+              let appleTop = 0;
+              const fall = setInterval(() => {
+                  if (isGameOver) {
+                      clearInterval(fall);
+                      apple.remove();
+                      return;
+                  }
+
+                  appleTop += parseFloat(apple.dataset.speed);
+                  apple.style.top = appleTop + 'px';
+
+                  const basketRect = basket.getBoundingClientRect();
+                  const appleRect = apple.getBoundingClientRect();
+
+                  if (
+                      appleRect.bottom >= basketRect.top &&
+                      appleRect.left < basketRect.right &&
+                      appleRect.right > basketRect.left
+                  ) {
+                      clearInterval(fall);
+                      apple.remove();
+                      score += parseInt(apple.dataset.value);
+                      if (score < 0) score = 0;
+                      scoreDisplay.textContent = `🍎 ${score}`;
+                  }
+
+                  if (appleTop > gameArea.offsetHeight) {
+                      clearInterval(fall);
+                      apple.remove();
+                  }
+              }, 20);
+          }
+      }
+
+      document.addEventListener('keydown', (e) => {
+          if (isGameOver) return;
+          const left = parseInt(window.getComputedStyle(basket).left);
+          if (e.key === 'ArrowLeft' && left > 0) {
+              basket.style.left = Math.max(0, left - 20) + 'px';
+          } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+              basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 20) + 'px';
+          }
+      });
+
+      gameArea.addEventListener('touchstart', (e) => {
+          if (isGameOver) return;
+          e.preventDefault();
+
+          const touchX = e.touches[0].clientX;
+          const gameAreaRect = gameArea.getBoundingClientRect();
+          const middleX = gameAreaRect.left + gameAreaRect.width / 2;
+          const direction = (touchX < middleX) ? -1 : 1;
+
+          moveInterval = setInterval(() => {
+              const left = parseInt(window.getComputedStyle(basket).left);
+              if (direction === -1 && left > 0) {
+                  basket.style.left = Math.max(0, left - 10) + 'px';
+              } else if (direction === 1 && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+                  basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 10) + 'px';
+              }
+          }, 20);
+      });
+
+      gameArea.addEventListener('touchend', () => {
+          clearInterval(moveInterval);
+      });
+  </script>
+</body>
+</html>
