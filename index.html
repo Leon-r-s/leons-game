@@ -154,6 +154,13 @@
           timeLeft = 30;
           dropSpeed = 5;
           isGameOver = false;
+          function startGame() {
+    // ...既存の初期化コード...
+
+    // 💡 追加：勝手に動き続けないように touch 移動を明示的に止める
+    clearInterval(moveInterval);
+    moveInterval = null;
+}
           basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
           scoreDisplay.textContent = `🍎 ${score}`;
           timerDisplay.textContent = `⏳ ${timeLeft}`;
