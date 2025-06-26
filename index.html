@@ -245,15 +245,26 @@
           }
       }
 
-      document.addEventListener('keydown', (e) => {
-          if (isGameOver) return;
-          const left = parseInt(window.getComputedStyle(basket).left);
-          if (e.key === 'ArrowLeft' && left > 0) {
-              basket.style.left = Math.max(0, left - 20) + 'px';
-          } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-              basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 20) + 'px';
-          }
-      });
+      let keyMoveInterval = null;
+
+document.addEventListener('keydown', (e) => {
+    if (isGameOver || keyMoveInterval) return;
+    const move = () => {
+        const left = parseInt(window.getComputedStyle(basket).left);
+        if (e.key === 'ArrowLeft' && left > 0) {
+            basket.style.left = Math.max(0, left - 15) + 'px';
+        } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+            basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 15) + 'px';
+        }
+    };
+    move(); // 押した瞬間に移動
+    keyMoveInterval = setInterval(move, 50);
+});
+
+document.addEventListener('keyup', () => {
+    clearInterval(keyMoveInterval);
+    keyMoveInterval = null;
+});
 
       gameArea.addEventListener('touchstart', (e) => {
           if (isGameOver) return;
