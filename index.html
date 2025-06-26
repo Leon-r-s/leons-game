@@ -41,9 +41,6 @@
             border: 2px solid #cc6666;
             border-radius: 8px;
         }
-        #startButton:active {
-            background-color: #ffaaaa;
-        }
         #basket {
             position: absolute;
             bottom: 20px;
@@ -103,7 +100,7 @@
 <body>
     <div id="gameArea">
         <img id="titleScreen" src="title.png" alt="タイトル">
-        <button id="startButton" ontouchstart="this.click()">スタート！</button>
+        <button id="startButton">スタート！</button>
         <div id="basket" style="display:none;"></div>
         <div id="score" style="display:none;">🍎 0</div>
         <div id="timer" style="display:none;">⏳ 30</div>
@@ -154,13 +151,8 @@
           timeLeft = 30;
           dropSpeed = 5;
           isGameOver = false;
-          function startGame() {
-    // ...既存の初期化コード...
-
-    // 💡 追加：勝手に動き続けないように touch 移動を明示的に止める
-    clearInterval(moveInterval);
-    moveInterval = null;
-}
+          clearInterval(moveInterval);
+          moveInterval = null;
           basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
           scoreDisplay.textContent = `🍎 ${score}`;
           timerDisplay.textContent = `⏳ ${timeLeft}`;
@@ -185,6 +177,8 @@
           isGameOver = true;
           clearInterval(appleDropInterval);
           clearInterval(timerInterval);
+          clearInterval(moveInterval);
+          moveInterval = null;
           finalScoreDisplay.textContent = score;
           clearMessage.style.display = 'block';
           basket.style.display = 'none';
@@ -255,17 +249,19 @@
       let keyMoveInterval = null;
 
 document.addEventListener('keydown', (e) => {
-    if (isGameOver || keyMoveInterval) return;
+    if (isGameOver) return;
+    if (keyMoveInterval) return; // 二重起動防止
+
     const move = () => {
         const left = parseInt(window.getComputedStyle(basket).left);
         if (e.key === 'ArrowLeft' && left > 0) {
-            basket.style.left = Math.max(0, left - 15) + 'px';
+            basket.style.left = Math.max(0, left - 12) + 'px';
         } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-            basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 15) + 'px';
+            basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 12) + 'px';
         }
     };
-    move(); // 押した瞬間に移動
-    keyMoveInterval = setInterval(move, 50);
+    move(); // 押した瞬間に一度移動
+    keyMoveInterval = setInterval(move, 20);
 });
 
 document.addEventListener('keyup', () => {
@@ -282,6 +278,7 @@ document.addEventListener('keyup', () => {
           const middleX = gameAreaRect.left + gameAreaRect.width / 2;
           const direction = (touchX < middleX) ? -1 : 1;
 
+          clearInterval(moveInterval);
           moveInterval = setInterval(() => {
               const left = parseInt(window.getComputedStyle(basket).left);
               if (direction === -1 && left > 0) {
@@ -294,7 +291,13 @@ document.addEventListener('keyup', () => {
 
       gameArea.addEventListener('touchend', () => {
           clearInterval(moveInterval);
+          moveInterval = null;
+      });
+
+      gameArea.addEventListener('touchcancel', () => {
+          clearInterval(moveInterval);
+          moveInterval = null;
       });
   </script>
-</body>
-</html>
+  </body>
+  </html>
