@@ -269,9 +269,11 @@ document.addEventListener('keyup', () => {
     keyMoveInterval = null;
 });
 
-      gameArea.addEventListener('touchstart', (e) => {
-          if (isGameOver) return;
-          e.preventDefault();
+gameArea.addEventListener('touchstart', (e) => {
+    // スタートボタンやその他の UI を触っているなら無視
+    if (e.target.closest('button') || e.target.closest('#titleScreen')) return;
+    if (isGameOver) return;
+    e.preventDefault();
 
           const touchX = e.touches[0].clientX;
           const gameAreaRect = gameArea.getBoundingClientRect();
