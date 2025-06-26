@@ -98,6 +98,7 @@
     </style>
 </head>
 <body>
+    <audio id="bgm" src="aallbgm.mp3" loop></audio>
     <div id="gameArea">
         <img id="titleScreen" src="title.png" alt="タイトル">
         <button id="startButton">スタート！</button>
@@ -120,6 +121,7 @@
       const clearMessage = document.getElementById('clearMessage');
       const finalScoreDisplay = document.getElementById('finalScore');
       const restartButton = document.getElementById('restartButton');
+      const bgm = document.getElementById('bgm');
 
       let score = 0;
       let timeLeft = 30;
@@ -128,6 +130,20 @@
       let appleDropInterval;
       let timerInterval;
       let moveInterval = null;
+
+      // BGM自動再生（ユーザー操作後対応）
+      document.addEventListener('DOMContentLoaded', () => {
+          bgm.volume = 0.5;
+          bgm.play().catch(() => {
+              const resumeAudio = () => {
+                  bgm.play();
+                  document.removeEventListener('click', resumeAudio);
+                  document.removeEventListener('touchstart', resumeAudio);
+              };
+              document.addEventListener('click', resumeAudio);
+              document.addEventListener('touchstart', resumeAudio);
+          });
+      });
 
       startButton.addEventListener('click', () => {
           titleScreen.style.display = 'none';
@@ -151,8 +167,6 @@
           timeLeft = 30;
           dropSpeed = 5;
           isGameOver = false;
-          clearInterval(moveInterval);
-          moveInterval = null;
           basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
           scoreDisplay.textContent = `🍎 ${score}`;
           timerDisplay.textContent = `⏳ ${timeLeft}`;
@@ -177,8 +191,6 @@
           isGameOver = true;
           clearInterval(appleDropInterval);
           clearInterval(timerInterval);
-          clearInterval(moveInterval);
-          moveInterval = null;
           finalScoreDisplay.textContent = score;
           clearMessage.style.display = 'block';
           basket.style.display = 'none';
@@ -248,58 +260,50 @@
 
       let keyMoveInterval = null;
 
-document.addEventListener('keydown', (e) => {
-    if (isGameOver) return;
-    if (keyMoveInterval) return; // 二重起動防止
+      document.addEventListener('keydown', (e) => {
+          if (isGameOver) return;
+          if (keyMoveInterval) return;
 
-    const move = () => {
-        const left = parseInt(window.getComputedStyle(basket).left);
-        if (e.key === 'ArrowLeft' && left > 0) {
-            basket.style.left = Math.max(0, left - 12) + 'px';
-        } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-            basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 12) + 'px';
-        }
-    };
-    move(); // 押した瞬間に一度移動
-    keyMoveInterval = setInterval(move, 20);
-});
+          const move = () => {
+              const left = parseInt(window.getComputedStyle(basket).left);
+              if (e.key === 'ArrowLeft' && left > 0) {
+                  basket.style.left = Math.max(0, left - 12) + 'px';
+              } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+                  basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 12) + 'px';
+              }
+          };
+          move();
+          keyMoveInterval = setInterval(move, 20);
+      });
 
-document.addEventListener('keyup', () => {
-    clearInterval(keyMoveInterval);
-    keyMoveInterval = null;
-});
+      document.addEventListener('keyup', () => {
+          clearInterval(keyMoveInterval);
+          keyMoveInterval = null;
+      });
 
-gameArea.addEventListener('touchstart', (e) => {
-    // スタートボタンやその他の UI を触っているなら無視
-    if (e.target.closest('button') || e.target.closest('#titleScreen')) return;
-    if (isGameOver) return;
-    e.preventDefault();
+      gameArea.addEventListener('touchstart', (e) => {
+          if (e.target.closest('button') || e.target.closest('#titleScreen')) return;
+          if (isGameOver) return;
+          e.preventDefault();
 
           const touchX = e.touches[0].clientX;
           const gameAreaRect = gameArea.getBoundingClientRect();
           const middleX = gameAreaRect.left + gameAreaRect.width / 2;
           const direction = (touchX < middleX) ? -1 : 1;
 
-          clearInterval(moveInterval);
           moveInterval = setInterval(() => {
               const left = parseInt(window.getComputedStyle(basket).left);
               if (direction === -1 && left > 0) {
-                  basket.style.left = Math.max(0, left - 10) + 'px';
+                  basket.style.left = Math.max(0, left - 15) + 'px';
               } else if (direction === 1 && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-                  basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 10) + 'px';
+                  basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 15) + 'px';
               }
           }, 20);
       });
 
       gameArea.addEventListener('touchend', () => {
           clearInterval(moveInterval);
-          moveInterval = null;
       });
-
-      gameArea.addEventListener('touchcancel', () => {
-          clearInterval(moveInterval);
-          moveInterval = null;
-      });
-  </script>
-  </body>
-  </html>
+    </script>
+</body>
+</html>
