@@ -112,198 +112,204 @@
         </div>
     </div>
     <script>
-      const basket = document.getElementById('basket');
-      const gameArea = document.getElementById('gameArea');
-      const scoreDisplay = document.getElementById('score');
-      const timerDisplay = document.getElementById('timer');
-      const titleScreen = document.getElementById('titleScreen');
-      const startButton = document.getElementById('startButton');
-      const clearMessage = document.getElementById('clearMessage');
-      const finalScoreDisplay = document.getElementById('finalScore');
-      const restartButton = document.getElementById('restartButton');
-      const bgm = document.getElementById('bgm');
-
-      let score = 0;
-      let timeLeft = 30;
-      let dropSpeed = 5;
-      let isGameOver = false;
-      let appleDropInterval;
-      let timerInterval;
-      let moveInterval = null;
-
-      // BGM自動再生（ユーザー操作後対応）
-      document.addEventListener('DOMContentLoaded', () => {
-          bgm.volume = 0.5;
-          bgm.play().catch(() => {
-              const resumeAudio = () => {
-                  bgm.play();
-                  document.removeEventListener('click', resumeAudio);
-                  document.removeEventListener('touchstart', resumeAudio);
-              };
-              document.addEventListener('click', resumeAudio);
-              document.addEventListener('touchstart', resumeAudio);
-          });
-      });
-
-      startButton.addEventListener('click', () => {
-          titleScreen.style.display = 'none';
-          startButton.style.display = 'none';
-          basket.style.display = 'block';
-          scoreDisplay.style.display = 'block';
-          timerDisplay.style.display = 'block';
-          startGame();
-      });
-
-      restartButton.addEventListener('click', () => {
-          clearMessage.style.display = 'none';
-          basket.style.display = 'block';
-          scoreDisplay.style.display = 'block';
-          timerDisplay.style.display = 'block';
-          startGame();
-      });
-
-      function startGame() {
-          score = 0;
-          timeLeft = 30;
-          dropSpeed = 5;
-          isGameOver = false;
-          basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
-          scoreDisplay.textContent = `🍎 ${score}`;
-          timerDisplay.textContent = `⏳ ${timeLeft}`;
-          clearMessage.style.display = 'none';
-          clearInterval(appleDropInterval);
-          clearInterval(timerInterval);
-          appleDropInterval = setInterval(dropApple, 1000);
-          timerInterval = setInterval(updateTimer, 1000);
-      }
-
-      function updateTimer() {
-          timeLeft--;
-          timerDisplay.textContent = `⏳ ${timeLeft}`;
-          if (timeLeft === 20) dropSpeed = 7;
-          if (timeLeft === 10) dropSpeed = 10;
-          if (timeLeft <= 0) {
-              gameOver();
-          }
-      }
-
-      function gameOver() {
-          isGameOver = true;
-          clearInterval(appleDropInterval);
-          clearInterval(timerInterval);
-          finalScoreDisplay.textContent = score;
-          clearMessage.style.display = 'block';
-          basket.style.display = 'none';
-          scoreDisplay.style.display = 'none';
-          timerDisplay.style.display = 'none';
-      }
-
-      function dropApple() {
-          if (isGameOver) return;
-
-          const dropCount = Math.floor(Math.random() * 3) + 1;
-          for (let i = 0; i < dropCount; i++) {
-              const apple = document.createElement('div');
-              apple.className = 'apple';
-
-              const typeRand = Math.random();
-              if (typeRand < 0.7) {
-                  apple.classList.add('normalApple');
-                  apple.dataset.value = 1;
-                  apple.dataset.speed = dropSpeed;
-              } else if (typeRand < 0.9) {
-                  apple.classList.add('purpleApple');
-                  apple.dataset.value = -5;
-                  apple.dataset.speed = dropSpeed;
-              } else {
-                  apple.classList.add('goldApple');
-                  apple.dataset.value = 10;
-                  apple.dataset.speed = dropSpeed + 3;
-              }
-
-              apple.style.left = Math.random() * (gameArea.offsetWidth - 40) + 'px';
-              gameArea.appendChild(apple);
-
-              let appleTop = 0;
-              const fall = setInterval(() => {
-                  if (isGameOver) {
-                      clearInterval(fall);
-                      apple.remove();
-                      return;
-                  }
-
-                  appleTop += parseFloat(apple.dataset.speed);
-                  apple.style.top = appleTop + 'px';
-
-                  const basketRect = basket.getBoundingClientRect();
-                  const appleRect = apple.getBoundingClientRect();
-
-                  if (
-                      appleRect.bottom >= basketRect.top &&
-                      appleRect.left < basketRect.right &&
-                      appleRect.right > basketRect.left
-                  ) {
-                      clearInterval(fall);
-                      apple.remove();
-                      score += parseInt(apple.dataset.value);
-                      if (score < 0) score = 0;
-                      scoreDisplay.textContent = `🍎 ${score}`;
-                  }
-
-                  if (appleTop > gameArea.offsetHeight) {
-                      clearInterval(fall);
-                      apple.remove();
-                  }
-              }, 20);
-          }
-      }
-
-      let keyMoveInterval = null;
-
-      document.addEventListener('keydown', (e) => {
-          if (isGameOver) return;
-          if (keyMoveInterval) return;
-
-          const move = () => {
-              const left = parseInt(window.getComputedStyle(basket).left);
-              if (e.key === 'ArrowLeft' && left > 0) {
-                  basket.style.left = Math.max(0, left - 12) + 'px';
-              } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-                  basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 12) + 'px';
-              }
-          };
-          move();
-          keyMoveInterval = setInterval(move, 20);
-      });
-
-      document.addEventListener('keyup', () => {
-          clearInterval(keyMoveInterval);
-          keyMoveInterval = null;
-      });
-
-      gameArea.addEventListener('touchstart', (e) => {
-          if (e.target.closest('button') || e.target.closest('#titleScreen')) return;
-          if (isGameOver) return;
-          e.preventDefault();
-
-          const touchX = e.touches[0].clientX;
-          const gameAreaRect = gameArea.getBoundingClientRect();
-          const middleX = gameAreaRect.left + gameAreaRect.width / 2;
-          const direction = (touchX < middleX) ? -1 : 1;
-
-          moveInterval = setInterval(() => {
-              const left = parseInt(window.getComputedStyle(basket).left);
-              if (direction === -1 && left > 0) {
-                  basket.style.left = Math.max(0, left - 15) + 'px';
-              } else if (direction === 1 && left < (gameArea.offsetWidth - basket.offsetWidth)) {
-                  basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 15) + 'px';
-              }
-          }, 20);
-      });
-
-      gameArea.addEventListener('touchend', () => {
-          clearInterval(moveInterval);
-      });
-    </script>
+        const basket = document.getElementById('basket');
+        const gameArea = document.getElementById('gameArea');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const titleScreen = document.getElementById('titleScreen');
+        const startButton = document.getElementById('startButton');
+        const clearMessage = document.getElementById('clearMessage');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+        const bgm = document.getElementById('bgm');
+      
+        let score = 0;
+        let timeLeft = 30;
+        let dropSpeed = 5;
+        let isGameOver = false;
+        let appleDropInterval;
+        let timerInterval;
+        let keyMoveInterval = null;
+        let moveInterval = null;
+        let currentTouchDirection = null;
+      
+        startButton.addEventListener('click', () => {
+            titleScreen.style.display = 'none';
+            startButton.style.display = 'none';
+            basket.style.display = 'block';
+            scoreDisplay.style.display = 'block';
+            timerDisplay.style.display = 'block';
+            startGame();
+        });
+      
+        restartButton.addEventListener('click', () => {
+            clearMessage.style.display = 'none';
+            basket.style.display = 'block';
+            scoreDisplay.style.display = 'block';
+            timerDisplay.style.display = 'block';
+            startGame();
+        });
+      
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            dropSpeed = 5;
+            isGameOver = false;
+            basket.style.left = (gameArea.offsetWidth / 2 - basket.offsetWidth / 2) + 'px';
+            scoreDisplay.textContent = `🍎 ${score}`;
+            timerDisplay.textContent = `⏳ ${timeLeft}`;
+            clearMessage.style.display = 'none';
+            clearInterval(appleDropInterval);
+            clearInterval(timerInterval);
+            clearInterval(moveInterval);
+            clearInterval(keyMoveInterval);
+            currentTouchDirection = null;
+            appleDropInterval = setInterval(dropApple, 1000);
+            timerInterval = setInterval(updateTimer, 1000);
+            bgm.currentTime = 0;
+            bgm.play().catch(e => {
+                console.log("BGM再生に失敗。ユーザー操作が必要です。");
+            });
+        }
+      
+        function updateTimer() {
+            timeLeft--;
+            timerDisplay.textContent = `⏳ ${timeLeft}`;
+            if (timeLeft === 20) dropSpeed = 7;
+            if (timeLeft === 10) dropSpeed = 10;
+            if (timeLeft <= 0) {
+                gameOver();
+            }
+        }
+      
+        function gameOver() {
+            isGameOver = true;
+            clearInterval(appleDropInterval);
+            clearInterval(timerInterval);
+            clearInterval(moveInterval);
+            clearInterval(keyMoveInterval);
+            currentTouchDirection = null;
+            finalScoreDisplay.textContent = score;
+            clearMessage.style.display = 'block';
+            basket.style.display = 'none';
+            scoreDisplay.style.display = 'none';
+            timerDisplay.style.display = 'none';
+            bgm.pause();
+        }
+      
+        function dropApple() {
+            if (isGameOver) return;
+      
+            const dropCount = Math.floor(Math.random() * 3) + 1;
+            for (let i = 0; i < dropCount; i++) {
+                const apple = document.createElement('div');
+                apple.className = 'apple';
+      
+                const typeRand = Math.random();
+                if (typeRand < 0.7) {
+                    apple.classList.add('normalApple');
+                    apple.dataset.value = 1;
+                    apple.dataset.speed = dropSpeed;
+                } else if (typeRand < 0.9) {
+                    apple.classList.add('purpleApple');
+                    apple.dataset.value = -5;
+                    apple.dataset.speed = dropSpeed;
+                } else {
+                    apple.classList.add('goldApple');
+                    apple.dataset.value = 10;
+                    apple.dataset.speed = dropSpeed + 3;
+                }
+      
+                apple.style.left = Math.random() * (gameArea.offsetWidth - 40) + 'px';
+                gameArea.appendChild(apple);
+      
+                let appleTop = 0;
+                const fall = setInterval(() => {
+                    if (isGameOver) {
+                        clearInterval(fall);
+                        apple.remove();
+                        return;
+                    }
+      
+                    appleTop += parseFloat(apple.dataset.speed);
+                    apple.style.top = appleTop + 'px';
+      
+                    const basketRect = basket.getBoundingClientRect();
+                    const appleRect = apple.getBoundingClientRect();
+      
+                    if (
+                        appleRect.bottom >= basketRect.top &&
+                        appleRect.left < basketRect.right &&
+                        appleRect.right > basketRect.left
+                    ) {
+                        clearInterval(fall);
+                        apple.remove();
+                        score += parseInt(apple.dataset.value);
+                        if (score < 0) score = 0;
+                        scoreDisplay.textContent = `🍎 ${score}`;
+                    }
+      
+                    if (appleTop > gameArea.offsetHeight) {
+                        clearInterval(fall);
+                        apple.remove();
+                    }
+                }, 20);
+            }
+        }
+      
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) return;
+            if (keyMoveInterval) return;
+      
+            const move = () => {
+                const left = parseInt(window.getComputedStyle(basket).left);
+                if (e.key === 'ArrowLeft' && left > 0) {
+                    basket.style.left = Math.max(0, left - 12) + 'px';
+                } else if (e.key === 'ArrowRight' && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+                    basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 12) + 'px';
+                }
+            };
+            move();
+            keyMoveInterval = setInterval(move, 20);
+        });
+      
+        document.addEventListener('keyup', () => {
+            clearInterval(keyMoveInterval);
+            keyMoveInterval = null;
+        });
+      
+        gameArea.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button') || e.target.closest('#titleScreen')) return;
+            if (isGameOver) return;
+            e.preventDefault();
+      
+            const touchX = e.touches[0].clientX;
+            const gameAreaRect = gameArea.getBoundingClientRect();
+            const middleX = gameAreaRect.left + gameAreaRect.width / 2;
+            currentTouchDirection = (touchX < middleX) ? -1 : 1;
+      
+            clearInterval(moveInterval);
+            moveInterval = setInterval(() => {
+                const left = parseInt(window.getComputedStyle(basket).left);
+                if (currentTouchDirection === -1 && left > 0) {
+                    basket.style.left = Math.max(0, left - 15) + 'px';
+                } else if (currentTouchDirection === 1 && left < (gameArea.offsetWidth - basket.offsetWidth)) {
+                    basket.style.left = Math.min(gameArea.offsetWidth - basket.offsetWidth, left + 15) + 'px';
+                }
+            }, 20);
+        });
+      
+        gameArea.addEventListener('touchend', () => {
+            clearInterval(moveInterval);
+            moveInterval = null;
+            currentTouchDirection = null;
+        });
+      
+        gameArea.addEventListener('touchcancel', () => {
+            clearInterval(moveInterval);
+            moveInterval = null;
+            currentTouchDirection = null;
+        });
+      </script>      
 </body>
 </html>
